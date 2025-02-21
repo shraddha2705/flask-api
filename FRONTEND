@@ -1,0 +1,70 @@
+import { useState } from "react";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+export default function Home() {
+  const [jsonInput, setJsonInput] = useState("");
+  const [responseData, setResponseData] = useState(null);
+  const [selectedFilters, setSelectedFilters] = useState([]);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    try {
+      const parsedData = JSON.parse(jsonInput);
+      if (!parsedData.data || !Array.isArray(parsedData.data)) {
+        throw new Error("Invalid JSON format");
+      }
+      setError("");
+      const response = await fetch("https://testbfhl.herokuapp.com/bfhl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsedData),
+      });
+      const result = await response.json();
+      setResponseData(result);
+    } catch (e) {
+      setError("Invalid JSON format");
+    }
+  };
+
+  const filteredData = responseData
+    ? {
+        numbers: selectedFilters.includes("Numbers") ? responseData.numbers : [],
+        alphabets: selectedFilters.includes("Alphabets") ? responseData.alphabets : [],
+        highest_alphabet: selectedFilters.includes("Highest Alphabet")
+          ? responseData.highest_alphabet
+          : [],
+      }
+    : null;
+
+  return (
+    <div className="p-4">
+      <title>ABCD123</title>
+      <Input
+        type="text"
+        placeholder="Enter JSON"
+        value={jsonInput}
+        onChange={(e) => setJsonInput(e.target.value)}
+      />
+      {error && <p className="text-red-500">{error}</p>}
+      <Button onClick={handleSubmit} className="mt-2">Submit</Button>
+
+      {responseData && (
+        <>
+          <Select
+            multiple
+            onValueChange={(value) => setSelectedFilters(value)}
+            options={["Alphabets", "Numbers", "Highest Alphabet"]}
+          />
+          <Card className="mt-4">
+            <CardContent>
+              <pre>{JSON.stringify(filteredData, null, 2)}</pre>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
